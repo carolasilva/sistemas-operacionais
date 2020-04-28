@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { Form as UnForm } from "@unform/web";
 import '../../App.scss';
 import {
@@ -15,7 +15,7 @@ import Input from '../Input';
 const PageReplacementAlgorithm = () => {
 
   const formRef = useRef(null);
-
+  const [sequence, setSequence] = useState([]);
   const fifoFunction = (memorySize, sequence) => {
     let queue = [];
     let memory = [];
@@ -27,14 +27,18 @@ const PageReplacementAlgorithm = () => {
         if (memory.length < memorySize) {
           memory.push(page);
           queue.push(page);
+          memoryInProgress = [... memory];
+          while (memoryInProgress.length < memorySize)
+            memoryInProgress.push('');
         }
         else {
           const out = queue.shift();
           const index = memory.indexOf(out);
           memory[index] = page;
           queue.push(page);
+          memoryInProgress = [... memory];
         }
-        memoryInProgress = [... memory];
+
       } else {
         memoryInProgress = ['', '', '']
       }
@@ -43,7 +47,6 @@ const PageReplacementAlgorithm = () => {
     })
     return result;
   }
-
 
   const optimumFunction = (memorySize, sequence) => {
     let memory = [];
@@ -54,8 +57,10 @@ const PageReplacementAlgorithm = () => {
       if (memory.indexOf(page) === -1){
         if (memory.length < memorySize) {
           memory.push(page);
+          memoryInProgress = [... memory];
+          while (memoryInProgress.length < memorySize)
+          memoryInProgress.push('');
         } else {
-          debugger
            let elementToChange;
            let biggestIndex = -1;
            const nextElementsOfSequence = sequence.slice(index + 1, sequence.length);
@@ -74,8 +79,9 @@ const PageReplacementAlgorithm = () => {
            }
           const indexOfElementToChangeInMemory = memory.indexOf(elementToChange);
           memory[indexOfElementToChangeInMemory] = page;
+          memoryInProgress = [... memory];
         }
-        memoryInProgress = [... memory];
+
       } else {
         memoryInProgress = ['', '', '']
       }
@@ -85,13 +91,53 @@ const PageReplacementAlgorithm = () => {
     return result;
   }
 
+  const manageResult = (result, rows) => {
+    const columns = result.length;
+    const data = [];
+    let auxVector = [];
+
+    for (let i = 0; i < rows; i++) {
+      auxVector = [];
+      result.map((column) => {
+        auxVector.push(column[i]);
+      })
+      data.push(auxVector);
+    }
+
+    return data;
+  }
+
+  const renderTd = (element) => {
+    return <td>{element}</td>;
+  }
+
+  const renderRow = (data) => {
+    if (data.length > 0) {
+      return (
+        <tr>
+          {data.map(renderTd)}
+        </tr>
+      )
+    } else
+     return;
+  }
+
+  const [fifo, setFifo] = useState([]);
+  const [show, setShow] = useState(false);
+
   async function handleSubmit(data, { reset }) {
     const memorySize = data.memorySize;
-    const sequence = data.sequence.split('-').map(item => Number(item));
-    const fifo = fifoFunction(memorySize, sequence);
+    setSequence(data.sequence.split('-').map(item => Number(item)));
+    const result = fifoFunction(memorySize, sequence);
+    setFifo(manageResult(result, memorySize));
     const optimum = optimumFunction(memorySize, sequence);
-    console.log(optimum);
   }
+
+  useEffect(() => {
+    if (fifo.length !== 0) {
+      setShow(true);
+    }
+  }, [fifo]);
 
   return (
     <>
@@ -136,6 +182,24 @@ const PageReplacementAlgorithm = () => {
                   </UnForm>
                 </Col>
               </Row>
+              {
+                show &&
+                <>
+                  <Container className='results'>
+                    <Row>
+                      <h3>FIFO: </h3>
+                      <table className="table">
+                        <tbody>
+                          {fifo.map(renderRow)}
+                        </tbody>
+                      </table>
+                    </Row>
+
+                  </Container>
+
+                </>
+              }
+
             </div>
           </Col>
         </Row>
