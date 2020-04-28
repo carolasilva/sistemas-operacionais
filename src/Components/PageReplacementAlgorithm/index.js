@@ -15,11 +15,12 @@ import Input from '../Input';
 const PageReplacementAlgorithm = () => {
 
   const formRef = useRef(null);
-  debugger
+
   const fifoFunction = (memorySize, sequence) => {
     let queue = [];
     let memory = [];
     let result = [];
+    let memoryInProgress = [];
 
     sequence.forEach((page) => {
       if (memory.indexOf(page) === -1){
@@ -33,18 +34,63 @@ const PageReplacementAlgorithm = () => {
           memory[index] = page;
           queue.push(page);
         }
+        memoryInProgress = [... memory];
+      } else {
+        memoryInProgress = ['', '', '']
       }
 
-      console.log(memory);
-      //result.push(memoryInProgress);
-      //console.log(result);
+      result.push(memoryInProgress);
     })
+    return result;
+  }
+
+
+  const optimumFunction = (memorySize, sequence) => {
+    let memory = [];
+    let result = [];
+    let memoryInProgress = [];
+
+    sequence.map((page, index) => {
+      if (memory.indexOf(page) === -1){
+        if (memory.length < memorySize) {
+          memory.push(page);
+        } else {
+          debugger
+           let elementToChange;
+           let biggestIndex = -1;
+           const nextElementsOfSequence = sequence.slice(index + 1, sequence.length);
+
+           for (let i = 0; i < memorySize; i++) {
+             let indexOfNextInstance = nextElementsOfSequence.indexOf(memory[i]);
+             if (indexOfNextInstance === -1) {
+               biggestIndex = indexOfNextInstance;
+               elementToChange = memory[i];
+               break;
+             }
+             else if (indexOfNextInstance > biggestIndex) {
+               biggestIndex = indexOfNextInstance;
+               elementToChange = memory[i];
+             }
+           }
+          const indexOfElementToChangeInMemory = memory.indexOf(elementToChange);
+          memory[indexOfElementToChangeInMemory] = page;
+        }
+        memoryInProgress = [... memory];
+      } else {
+        memoryInProgress = ['', '', '']
+      }
+
+      result.push(memoryInProgress);
+    })
+    return result;
   }
 
   async function handleSubmit(data, { reset }) {
     const memorySize = data.memorySize;
     const sequence = data.sequence.split('-').map(item => Number(item));
     const fifo = fifoFunction(memorySize, sequence);
+    const optimum = optimumFunction(memorySize, sequence);
+    console.log(optimum);
   }
 
   return (
