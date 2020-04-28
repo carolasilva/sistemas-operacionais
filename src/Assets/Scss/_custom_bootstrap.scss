@@ -1,0 +1,37 @@
+
+//Botões
+.btn {
+  text-transform: uppercase;
+  font-weight: 600;
+  font-family: 'Montserrat';
+}
+
+.btn-primary {
+  color: $white;
+  background-image: $gradient;
+  background-color: $gradient;
+  border-color: transparent;
+}
+
+.btn-dark {
+  color: $white;
+  background-color: $gray-dark;
+  border-color: $gray-dark;
+}
+
+
+// Alerts
+.alert-success {
+  color: $primary;
+  background-color: $white;
+  border-color: $white;
+}
+
+// Form
+.form-control {
+  height: auto;
+}
+
+.form-group {
+  width: 100%;
+}
