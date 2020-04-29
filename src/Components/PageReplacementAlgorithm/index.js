@@ -16,6 +16,13 @@ const PageReplacementAlgorithm = () => {
 
   const formRef = useRef(null);
   const [sequence, setSequence] = useState([]);
+  const [fifo, setFifo] = useState([]);
+  const [optimum, setOptimum] = useState([]);
+  const [lfu, setLfu] = useState([]);
+  const [mfu, setMfu] = useState([]);
+  const [show, setShow] = useState(false);
+
+
   const fifoFunction = (memorySize, sequence) => {
     let queue = [];
     let memory = [];
@@ -91,6 +98,147 @@ const PageReplacementAlgorithm = () => {
     return result;
   }
 
+  const lfuFunction = (memorySize, sequence) => {
+    let queue = [];
+    let memory = [];
+    let result = [];
+    let memoryInProgress = [];
+    let frequencyTable = {};
+
+
+    sequence.forEach((page) => {
+      // if page isn't in memory yet
+      if (memory.indexOf(page) === -1){
+        // If there's room in memory
+        if (memory.length < memorySize) {
+          memory.push(page);
+          queue.push(page);
+          memoryInProgress = [...memory];
+          while (memoryInProgress.length < memorySize)
+            memoryInProgress.push('');
+        }
+        // there isn't room in memory
+        else {
+          let leastFrequentlyUsed = [];
+          let minimum;
+          for (var[key, value] of Object.entries(frequencyTable)) {
+            if (minimum == undefined || value <= minimum) {
+              minimum = value
+            }
+          }
+
+          for (var[key, value] of Object.entries(frequencyTable)) {
+            if (value === minimum)
+              leastFrequentlyUsed.push(parseInt(key));
+          }
+
+          let elementToRemove;
+          if (leastFrequentlyUsed.length === 1) {
+            elementToRemove = leastFrequentlyUsed[0];
+          } else {
+            let firstIn;
+            let leastIndex;
+            leastFrequentlyUsed.forEach((element) => {
+              if (queue.indexOf(element) < leastIndex || leastIndex == undefined) {
+                leastIndex = queue.indexOf(element);
+                firstIn = element;
+              }
+            });
+
+            elementToRemove = firstIn;
+
+          }
+
+          queue.splice(queue.indexOf(elementToRemove), 1);
+          const index = memory.indexOf(elementToRemove);
+          memory[index] = page;
+          queue.push(page);
+          memoryInProgress = [...memory];
+          delete frequencyTable[elementToRemove]
+        }
+        frequencyTable[page] = 1;
+      // Page is already in memory
+      } else {
+        memoryInProgress = ['', '', '']
+        frequencyTable[page] = frequencyTable[page] + 1;
+      }
+      // console.log(frequencyTable)
+      result.push(memoryInProgress);
+    })
+
+    return result;
+  }
+
+  const mfuFunction = (memorySize, sequence) => {
+    let queue = [];
+    let memory = [];
+    let result = [];
+    let memoryInProgress = [];
+    let frequencyTable = {};
+
+
+    sequence.forEach((page) => {
+      // if page isn't in memory yet
+      if (memory.indexOf(page) === -1){
+        // If there's room in memory
+        if (memory.length < memorySize) {
+          memory.push(page);
+          queue.push(page);
+          memoryInProgress = [...memory];
+          while (memoryInProgress.length < memorySize)
+            memoryInProgress.push('');
+        }
+        // there isn't room in memory
+        else {
+          let mostFrequentlyUsed = [];
+          let maximum;
+          for (var[key, value] of Object.entries(frequencyTable)) {
+            if (maximum == undefined || value >= maximum) {
+              maximum = value
+            }
+          }
+
+          for (var[key, value] of Object.entries(frequencyTable)) {
+            if (value === maximum)
+              mostFrequentlyUsed.push(parseInt(key));
+          }
+
+          let elementToRemove;
+          if (mostFrequentlyUsed.length === 1) {
+            elementToRemove = mostFrequentlyUsed[0];
+          } else {
+            let firstIn;
+            let leastIndex;
+            mostFrequentlyUsed.forEach((element) => {
+              if (queue.indexOf(element) < leastIndex || leastIndex == undefined) {
+                leastIndex = queue.indexOf(element);
+                firstIn = element;
+              }
+            });
+
+            elementToRemove = firstIn;
+
+          }
+
+          queue.splice(queue.indexOf(elementToRemove), 1);
+          const index = memory.indexOf(elementToRemove);
+          memory[index] = page;
+          queue.push(page);
+          memoryInProgress = [...memory];
+          delete frequencyTable[elementToRemove]
+        }
+        frequencyTable[page] = 1;
+        // Page is already in memory
+      } else {
+        memoryInProgress = ['', '', '']
+        frequencyTable[page] = frequencyTable[page] + 1;
+      }
+      // console.log(frequencyTable)
+      result.push(memoryInProgress);
+    })
+    return result;
+  }
+
   const manageResult = (result, rows) => {
     const columns = result.length;
     const data = [];
@@ -122,22 +270,24 @@ const PageReplacementAlgorithm = () => {
      return;
   }
 
-  const [fifo, setFifo] = useState([]);
-  const [show, setShow] = useState(false);
-
   async function handleSubmit(data, { reset }) {
     const memorySize = data.memorySize;
     setSequence(data.sequence.split('-').map(item => Number(item)));
     const result = fifoFunction(memorySize, sequence);
     setFifo(manageResult(result, memorySize));
-    const optimum = optimumFunction(memorySize, sequence);
+    const optimumResult = optimumFunction(memorySize, sequence);
+    setOptimum(manageResult(optimumResult, memorySize));
+    const lfuResult = lfuFunction(memorySize, sequence);
+    setLfu(manageResult(lfuResult, memorySize));
+    const mfuResult = mfuFunction(memorySize, sequence);
+    setMfu(manageResult(mfuResult, memorySize));
   }
 
   useEffect(() => {
-    if (fifo.length !== 0) {
+    if (mfu.length !== 0) {
       setShow(true);
     }
-  }, [fifo]);
+  }, [mfu]);
 
   return (
     <>
@@ -194,12 +344,33 @@ const PageReplacementAlgorithm = () => {
                         </tbody>
                       </table>
                     </Row>
-
+                    <Row>
+                      <h3>Optimum: </h3>
+                      <table className="table">
+                        <tbody>
+                        {optimum.map(renderRow)}
+                        </tbody>
+                      </table>
+                    </Row>
+                    <Row>
+                      <h3>LFU: </h3>
+                      <table className="table">
+                        <tbody>
+                        {lfu.map(renderRow)}
+                        </tbody>
+                      </table>
+                    </Row>
+                    <Row>
+                      <h3>MFU: </h3>
+                      <table className="table">
+                        <tbody>
+                        {mfu.map(renderRow)}
+                        </tbody>
+                      </table>
+                    </Row>
                   </Container>
-
                 </>
               }
-
             </div>
           </Col>
         </Row>
